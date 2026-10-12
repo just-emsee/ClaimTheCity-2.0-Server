@@ -36,7 +36,8 @@ wss.on("connection", (socket) => {
     socket.on("error", console.error);
 });
 
-const port = process.env.PORT || 55555;
+//const port = process.env.PORT || 55555;
+const port = 55555;
 
 server.listen(port, "0.0.0.0", () => {
     console.log(`Server listening on ${port}`);
