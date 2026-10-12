@@ -47,10 +47,6 @@ public class ConsoleCommands {
                     Server.SendGameUpdateToAll();
                     break;
                 };
-                case "test": {
-                    Server.messageQueue.Enqueue(new Message(new AcceptClientMessage(1), Server.clients));
-                    break;
-                }
                 default: {
                     throw new Exception("Unknown Command");
                 };
