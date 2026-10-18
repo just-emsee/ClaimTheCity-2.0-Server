@@ -1,6 +1,4 @@
 ﻿using shared;
-using System;
-using System.Collections.Generic;
 
 public class GameData : ISerializable {
     public bool updated;
@@ -10,8 +8,8 @@ public class GameData : ISerializable {
     readonly Dictionary<string, GameTask> tasks = new Dictionary<string, GameTask>();
 
     public void addScore(string taskName, string teamPassWord, double score) {
-        if (taskExists(taskName) && teamExists(teamPassWord)) 
-            tasks[taskName].setScore(teams[teamPassWord], score);
+        if (taskExists(taskName) && teamExists(teamPassWord))
+            tasks[taskName].setScore(score, teams[teamPassWord], teamPassWord);
         updated = true;
     }
 
@@ -29,10 +27,35 @@ public class GameData : ISerializable {
         updated = true;
     }
 
+    public void RemoveTask(string name) {
+        if (!tasks.ContainsKey(name)) throw new Exception("Task does not exist");
+        tasks.Remove(name);
+        updated = true;
+    }
+
     public void CreateTeam(string name, string pass) {
         if (teams.ContainsKey(pass)) throw new Exception("Password already in use");
         teams.Add(pass, new GameTeam(name));
         updated = true;
+    }
+
+    public void RemoveTeam(string pass) {
+        if (!teams.ContainsKey(pass)) throw new Exception("Team with this password does not exist");
+        foreach (GameTask task in tasks.Values) {
+            task.TeamRemoved(teams[pass]);
+        }
+        teams.Remove(pass);
+        updated = true;
+    }
+
+    public void SetTeamColor(string pass, string r, string g, string b) {
+        if (!teams.ContainsKey(pass)) throw new Exception("Team with this password does not exist");
+        try {
+            teams[pass].setColor(int.Parse(r), int.Parse(g), int.Parse(b));
+            updated = true;
+        } catch {
+            throw new Exception("color values are non numbers");
+        }
     }
 
     public void Serialize(Packet pPacket) {
@@ -63,16 +86,22 @@ public class GameData : ISerializable {
         }
     }
 
-    public void ConsoleLogTeams() {
-        foreach (KeyValuePair<string,GameTeam> pair in teams) {
-            Console.WriteLine($" - {pair.Value.name}, [{pair.Key}]");
+    public string GetTeamLog() {
+        string toReturn = "";
+        foreach (KeyValuePair<string, GameTeam> pair in teams) {
+            toReturn += $" - {pair.Value.name}, [{pair.Key}]\n";
         }
+        toReturn = toReturn.TrimEnd('\n');
+        return toReturn;
     }
 
-    public void ConsoleLogTasks() {
+    public string GetTaskLog() {
+        string toReturn = "";
         foreach (KeyValuePair<string, GameTask> pair in tasks) {
-            Console.WriteLine($" - {pair.Key}");
+            toReturn += $" - {pair.Key}\n";
         }
+        toReturn = toReturn.TrimEnd('\n');
+        return toReturn;
     }
 
     public GameTeam GetTeamData(string pass) {
@@ -82,13 +111,17 @@ public class GameData : ISerializable {
     public int TeamAmount() {
         return teams.Count;
     }
-    
+
     public int TaskAmount() {
         return tasks.Count;
     }
+
+    public Dictionary<string, GameTask> GetTasks() {
+        return tasks;
+    }
 }
 
-public class GameTeam : ISerializable{
+public class GameTeam : ISerializable {
 
     public string name { get; private set; }
     public int R { get; private set; }
@@ -97,9 +130,14 @@ public class GameTeam : ISerializable{
     public GameTeam() { }
     public GameTeam(string name) { this.name = name; }
 
+    public void setColor(int r, int g, int b) {
+        R = r;
+        G = g;
+        B = b;
+    }
+
     public void Serialize(Packet pPacket) {
         pPacket.Write(name);
-
         pPacket.Write(R);
         pPacket.Write(G);
         pPacket.Write(B);
@@ -111,37 +149,125 @@ public class GameTeam : ISerializable{
         G = pPacket.ReadInt();
         B = pPacket.ReadInt();
     }
+
+
 }
 
-public class GameTask : ISerializable{
-    private readonly Dictionary<GameTeam, double> scores = new Dictionary<GameTeam, double>();
-    public bool hasTeamScore(GameTeam team) {
-        return scores.ContainsKey(team);
+public class GameTask : ISerializable {
+    private readonly List<Scoring> scores = new();
+    private Scoring bestScore;
+    public string description = "";
+    public bool HasTeamScore(GameTeam team) {
+        return scores.Exists(s => s.team == team);
+    }
+
+    public bool HasTeamScore(string pass) {
+        return scores.Exists(s => s.teamPass == pass);
     }
 
     public double getScore(GameTeam team) {
-        if (!hasTeamScore(team)) return 0;
-        return scores[team];
+        if (!HasTeamScore(team)) return 0;
+        double score = 0;
+        foreach (Scoring scoring in scores) {
+            if (scoring.team == team && scoring.score > score) {
+                score = scoring.score;
+            }
+        }
+        return score;
     }
 
-    public void setScore(GameTeam team, double score) {
-        scores.Add(team, score);
+    public void setScore(double score, GameTeam team, string pass) {
+        scores.Add(new Scoring(score, team, pass));
     }
 
     public void Serialize(Packet pPacket) {
         pPacket.Write(scores.Count);
-        foreach (KeyValuePair<GameTeam,double> pair in scores) {
-            pPacket.Write(pair.Key);
-            pPacket.Write(pair.Value);
+        foreach (Scoring scoring in scores) {
+            pPacket.Write(scoring);
         }
+        pPacket.Write(description);
     }
 
     public void Deserialize(Packet pPacket) {
         int scoreCount = pPacket.ReadInt();
         scores.Clear();
         while (scoreCount > 0) {
-            scores.Add((GameTeam)pPacket.ReadObject(), pPacket.ReadDouble());
+            scores.Add((Scoring)pPacket.ReadObject());
             scoreCount--;
+        }
+        description = pPacket.ReadString();
+    }
+
+    public int R() {
+        if (bestScore == null) return 0;
+        return bestScore.team.R;
+    }
+    public int G() {
+        if (bestScore == null) return 0;
+        return bestScore.team.G;
+    }
+    public int B() {
+        if (bestScore == null) return 0;
+        return bestScore.team.B;
+    }
+
+    public void RecalculateBestScore() {
+        bestScore = null;
+        foreach (Scoring score in scores) {
+            if (bestScore == null) {
+                bestScore = score;
+                continue;
+            }
+            if (score.score > bestScore.score) {
+                bestScore = score;
+            }
+        }
+    }
+
+    public Scoring GetBestScore() {
+        return bestScore;
+    }
+
+    public void TeamRemoved(GameTeam team) {
+        for (int i = scores.Count - 1; i >= 0; i--) {
+            Scoring score = scores[i];
+            if (score.team == team) {
+                scores.Remove(score);
+            }
+        }
+
+        if (bestScore != null && bestScore.team == team) {
+            RecalculateBestScore();
+        }
+    }
+
+    public class Scoring : ISerializable {
+        public double score;
+        public GameTeam team;
+        public string teamPass;
+        public string timestamp;
+
+        public Scoring() { }
+
+        public Scoring(double score, GameTeam team, string pass) {
+            this.score = score;
+            this.team = team;
+            this.teamPass = pass;
+            this.timestamp = DateTime.UtcNow.AddHours(2).ToString("o");
+        }
+
+
+        public void Serialize(Packet pPacket) {
+            pPacket.Write(score);
+            pPacket.Write(team);
+            pPacket.Write(teamPass);
+            pPacket.Write(timestamp);
+        }
+        public void Deserialize(Packet pPacket) {
+            score = pPacket.ReadDouble();
+            team = (GameTeam)pPacket.ReadObject();
+            teamPass = pPacket.ReadString();
+            timestamp = pPacket.ReadString();
         }
     }
 

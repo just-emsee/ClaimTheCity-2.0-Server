@@ -1,11 +1,13 @@
-﻿
-using System.Collections.Generic;
-using System.IO;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using shared;
 
 // Railway provides PORT. Use 55555 when running locally.
 var port = Environment.GetEnvironmentVariable("PORT") ?? "55555";
+var _adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "admin";
+var _savePath = Environment.GetEnvironmentVariable("SAVE_PATH") ?? "./save";
+Server.SetAdminPass(_adminPassword);
+Server.savePath = _savePath;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
@@ -90,7 +92,9 @@ app.Run(async context => {
                     $"Client {client.Id}: {incoming.GetType().Name}");
 
                 ISerializable response =
-                    Server.HandleMessage(client, incoming);
+                    MessageHandler.HandleMessage(client, incoming);
+
+                Server.CheckSaveDataDirty();
 
                 if (response != null) {
                     await Server.SendMessageToClient(client, response);
@@ -134,8 +138,8 @@ await app.RunAsync();
 // --------------------------------------------------
 
 public static class Server {
-    private static readonly object GameDataLock = new();
-    private static readonly object ClientsLock = new();
+    public static readonly object GameDataLock = new();
+    public static readonly object ClientsLock = new();
 
     public static readonly List<ClientConnection> clients = new();
 
@@ -144,6 +148,8 @@ public static class Server {
     public static GameData _gameData = new GameData();
 
     internal static string savePath = "./save";
+
+    public static string adminPassword = "admin";
 
     public static ClientConnection AddClient(WebSocket socket) {
         var client = new ClientConnection(
@@ -163,47 +169,6 @@ public static class Server {
         }
 
         client.Dispose();
-    }
-
-    public static ISerializable HandleMessage(
-        ClientConnection client,
-        ISerializable message) {
-        lock (GameDataLock) {
-            if (message is LoginAttemptMessage loginAttempt) {
-                // Avoid logging the password itself.
-                Console.WriteLine(
-                    $"Client {client.Id} attempted to log in.");
-
-                if (_gameData.teamExists(loginAttempt.password)) {
-                    GameTeam team =
-                        _gameData.GetTeamData(loginAttempt.password);
-
-                    client.TeamPassword = loginAttempt.password;
-
-                    Console.WriteLine(
-                        $"Client {client.Id} logged in as {team.name}.");
-
-                    return new LoginResultMessage(
-                        team,
-                        loginAttempt.password);
-                }
-
-                client.TeamPassword = null;
-                Console.WriteLine("Login failed: team not found.");
-
-                return new LoginResultMessage();
-            }
-
-            if (message is RequestDataUpdateMessage) {
-                Console.WriteLine(
-                    $"Client {client.Id} requested game data.");
-
-                return new DataUpdateMessage(_gameData);
-            }
-
-            throw new InvalidDataException(
-                $"Unhandled message type: {message.GetType().FullName}");
-        }
     }
 
     public static async Task SendMessageToClient(
@@ -320,6 +285,10 @@ public static class Server {
 
             await Task.Yield();
         }
+    }
+
+    public static void SetAdminPass(string adminPassword) {
+        Server.adminPassword = adminPassword;
     }
 }
 
