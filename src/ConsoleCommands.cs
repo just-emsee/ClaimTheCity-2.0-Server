@@ -4,6 +4,8 @@ using shared;
 public class ConsoleCommands {
     static Exception ilegalArgumentCount = new Exception("Wrong number of arguments");
 
+    static WaitingForConfirmCommand confirmCommand = null;
+
     public static string HandleCommand(string line) {
         try {
             return HandleCommandUnsafe(line);
@@ -15,6 +17,8 @@ public class ConsoleCommands {
 
     public static string HandleCommandUnsafe(string line) {
         string[] args = line.ToLower().Split(' ');
+        WaitingForConfirmCommand cc = confirmCommand;
+        confirmCommand = null;
         switch (args[0]) {
             case "help": {
                 return "List of commands:\n" +
@@ -35,7 +39,9 @@ public class ConsoleCommands {
                     "clients\n" +
                     "- gives the number of connected clients\n" +
                     "updateclients\n" +
-                    "- forces all clients to update their data from the server";
+                    "- forces all clients to update their data from the server"+
+                    "reset\n" +
+                    "- Resets all game data to nothing";
             }
             case "createteam": {
                 if (args.Length != 3) throw ilegalArgumentCount;
@@ -86,9 +92,32 @@ public class ConsoleCommands {
                 Server.SendGameUpdateToAll();
                 return $"Updating data for all clients";
             }
+            case "reset": {
+                if (args.Length != 1) throw ilegalArgumentCount ;
+
+                return "Type \"confirm\" to confirm data reset";
+            }
+            case "confirm": {
+                if (args.Length != 1) throw ilegalArgumentCount;
+                string toReturn = "No command to confirm";
+                if (cc != null) toReturn = cc.Execute();
+                return toReturn ;
+            }
             default: {
                 throw new Exception("Unknown Command");
             }
+        }
+    }
+
+    private abstract class WaitingForConfirmCommand {
+        public abstract string Execute();
+    }
+
+    private class ResetDataCommand : WaitingForConfirmCommand {
+        public override string Execute() {
+            Server._gameData = new();
+            Server._gameData .updated = true;
+            return "Save data reset to defaults";
         }
     }
 }
