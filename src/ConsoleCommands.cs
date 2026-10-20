@@ -23,23 +23,25 @@ public class ConsoleCommands {
             case "help": {
                 return "List of commands:\n" +
                     "createteam [team_name] [team_password]\n" +
-                    "- creates a new team\n" +
+                    "- creates a new team\n\n" +
                     "removeteam [team_password]\n" +
-                    "- removes a team\n" +
+                    "- removes a team\n/n" +
                     "setteamcolor [team_password] [R] [G] [B]\n" +
-                    "- sets the color for a given team\n" +
+                    "- sets the color for a given team\n\n" +
                     "teams\n" +
-                    "- lists all teams\n" +
+                    "- lists all teams\n\n" +
                     "createtask [task_name]\n" +
-                    "- creates a new task\n" +
-                    "settaskdescription [description]\n" +
-                    "- sets the text descripttion for a task\n" +
+                    "- creates a new task\n\n" +
+                    "removetask [task_name]\n" +
+                    "- creates a new task\n\n" +
+                    "settaskdescription [task_name] [description]\n" +
+                    "- sets the text descripttion for a task\n\n" +
                     "tasks\n" +
-                    "- lists all tasks\n" +
+                    "- lists all tasks\n\n" +
                     "clients\n" +
-                    "- gives the number of connected clients\n" +
+                    "- gives the number of connected clients\n\n" +
                     "updateclients\n" +
-                    "- forces all clients to update their data from the server"+
+                    "- forces all clients to update their data from the server\n\n"+
                     "reset\n" +
                     "- Resets all game data to nothing";
             }
@@ -73,11 +75,16 @@ public class ConsoleCommands {
                 return "Task removed";
             }
             case "settaskdescription": {
-                if (args.Length == 0) throw ilegalArgumentCount;
+                if (args.Length <= 2) throw ilegalArgumentCount;
+                string taskName = args[1];
+                string taskDescription = args[2];
 
+                for (int i = 3; i<=args.Length; i++)
+                    taskDescription += " " + args[i];
 
+                Server._gameData.SetTaskDesc(taskName, taskDescription);
 
-                return "command not yet implemented";
+                return "Description set";
             }
             case "tasks": {
                 if (args.Length != 1) throw ilegalArgumentCount;

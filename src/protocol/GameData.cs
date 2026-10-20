@@ -119,6 +119,11 @@ public class GameData : ISerializable {
     public Dictionary<string, GameTask> GetTasks() {
         return tasks;
     }
+
+    public void SetTaskDesc(string taskName, string taskDescription) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].description = taskDescription;
+    }
 }
 
 public class GameTeam : ISerializable {
