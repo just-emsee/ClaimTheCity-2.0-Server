@@ -110,25 +110,35 @@ public class ConsoleCommands {
                 return $"Updating data for all clients";
             }
             case "renameadminowned": {
-                throw new Exception("command not yet created.");
                 if (args.Length != 2) throw ilegalArgumentCount;
-                //TODO
+                Server._gameData.RenameAdminOwnedTasks(args[1]);
                 return "Admin owned tasks renamed";
             }
             case "scoreshidden": {
-                throw new Exception("command not yet created.");
                 if (args.Length != 2) throw ilegalArgumentCount;
-                //TODO
+                switch (args[1]) {
+                    case "true": {
+                        Server._gameData.SetScoreHidden(true);
+                        break;
+                    }
+                    case "false": {
+                        Server._gameData.SetScoreHidden(false);
+                        break;
+                    }
+                    default: {
+                        throw new Exception("Please use true or false");
+                    }
+                }
                 return "Setting changed";
             }
             case "settakeovermode": {
                 if (args.Length != 3) throw ilegalArgumentCount;
-                Server._gameData.SetTakoverMode(args[1], args[2]);
+                Server._gameData.SetTakeoverMode(args[1], args[2]);
                 return "Mode change success";
             }
             case "settakeovermodeall": {
                 if (args.Length != 2) throw ilegalArgumentCount;
-                Server._gameData.SetTakoverModeAll(args[1]);
+                Server._gameData.SetTakeoverModeAll(args[1]);
                 return "Mode change success";
             }
             case "linkmaptask": {

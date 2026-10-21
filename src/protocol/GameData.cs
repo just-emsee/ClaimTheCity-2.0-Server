@@ -1,7 +1,10 @@
 ﻿using shared;
 
 public class GameData : ISerializable {
+    
     public bool updated;
+    public bool scoresHiden = true;
+    public string adminOwnedTaskName = "none";
 
     // <passWord, Team>
     readonly Dictionary<string, GameTeam> teams = new Dictionary<string, GameTeam>();
@@ -58,7 +61,44 @@ public class GameData : ISerializable {
         }
     }
 
+    public void SetTaskDesc(string taskName, string taskDescription) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].description = taskDescription;
+        updated = true;
+    }
+
+    public void LinkTaskToMap(string taskName, string mapLink) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].linkedMap = mapLink;
+        updated = true;
+    }
+
+    public void SetTakeoverModeAll(string mode) {
+        foreach (GameTask task in tasks.Values) {
+            task.SetTakeoverMode(mode);
+            updated = true;
+        }
+    }
+
+    public void SetTakeoverMode(string taskName, string mode) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].SetTakeoverMode(mode);
+        updated = true;
+    }
+
+    public void SetScoreHidden(bool val) {
+        scoresHiden = val;
+        updated = true;
+    }
+
+    internal void RenameAdminOwnedTasks(string v) {
+        adminOwnedTaskName = v;
+        updated = true;
+    }
+
     public void Serialize(Packet pPacket) {
+        pPacket.Write(scoresHiden);
+        pPacket.Write(adminOwnedTaskName);
         pPacket.Write(teams.Count);
         pPacket.Write(tasks.Count);
         foreach (KeyValuePair<string, GameTeam> pair in teams) {
@@ -72,6 +112,8 @@ public class GameData : ISerializable {
     }
 
     public void Deserialize(Packet pPacket) {
+        scoresHiden = pPacket.ReadBool();
+        adminOwnedTaskName = pPacket.ReadString();
         int teamCount = pPacket.ReadInt();
         int taskCount = pPacket.ReadInt();
         teams.Clear();
@@ -119,27 +161,6 @@ public class GameData : ISerializable {
     public Dictionary<string, GameTask> GetTasks() {
         return tasks;
     }
-
-    public void SetTaskDesc(string taskName, string taskDescription) {
-        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
-        tasks[taskName].description = taskDescription;
-    }
-
-    internal void LinkTaskToMap(string taskName, string mapLink) {
-        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
-        tasks[taskName].linkedMap = mapLink;
-    }
-
-    internal void SetTakoverModeAll(string mode) {
-        foreach (GameTask task in tasks.Values) {
-            task.SetTakoverMode(mode);
-        }
-    }
-
-    internal void SetTakoverMode(string taskName, string mode) {
-        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
-        tasks[taskName].SetTakoverMode(mode);
-    }
 }
 
 public class GameTeam : ISerializable {
@@ -179,6 +200,7 @@ public class GameTask : ISerializable {
     private Scoring bestScore;
     public string description = "";
     public string linkedMap = "";
+    public string takeoverMode = "high";
     public bool HasTeamScore(GameTeam team) {
         return scores.Exists(s => s.team == team);
     }
@@ -209,6 +231,7 @@ public class GameTask : ISerializable {
         }
         pPacket.Write(description);
         pPacket.Write(linkedMap);
+        pPacket.Write(takeoverMode);
     }
 
     public void Deserialize(Packet pPacket) {
@@ -220,6 +243,7 @@ public class GameTask : ISerializable {
         }
         description = pPacket.ReadString();
         linkedMap = pPacket.ReadString();
+        takeoverMode = pPacket.ReadString();
     }
 
     public int R() {
@@ -265,23 +289,11 @@ public class GameTask : ISerializable {
         }
     }
 
-    internal void SetTakoverMode(string mode) {
-        //TODO
-        switch (mode) {
-            case "high": {
-
-                break;
-            }
-            case "low": {
-
-                break;
-            }
-            case "simple": {
-
-                break;
-            }
-            default: throw new Exception("No valid mode given");
+    public void SetTakeoverMode(string mode) {
+        if (mode!="high" && mode != "low" && mode != "simple") {
+            throw new Exception("No valid mode given");
         }
+        takeoverMode = mode;
     }
 
     public class Scoring : ISerializable {
