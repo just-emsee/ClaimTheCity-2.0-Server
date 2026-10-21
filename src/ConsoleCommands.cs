@@ -17,31 +17,43 @@ public class ConsoleCommands {
 
     public static string HandleCommandUnsafe(string line) {
         string[] args = line.ToLower().Split(' ');
+        // if the command typed now in not confirm this wipes the to confirm command.
         WaitingForConfirmCommand cc = confirmCommand;
         confirmCommand = null;
         switch (args[0]) {
             case "help": {
+                //TODO update to include all commands.
                 return "List of commands:\n" +
                     "createteam [team_name] [team_password]\n" +
                     "- creates a new team\n\n" +
+
                     "removeteam [team_password]\n" +
-                    "- removes a team\n/n" +
+                    "- removes a team\n\n" +
+
                     "setteamcolor [team_password] [R] [G] [B]\n" +
                     "- sets the color for a given team\n\n" +
+
                     "teams\n" +
                     "- lists all teams\n\n" +
+
                     "createtask [task_name]\n" +
                     "- creates a new task\n\n" +
+
                     "removetask [task_name]\n" +
                     "- creates a new task\n\n" +
+
                     "settaskdescription [task_name] [description]\n" +
                     "- sets the text descripttion for a task\n\n" +
+
                     "tasks\n" +
                     "- lists all tasks\n\n" +
+
                     "clients\n" +
                     "- gives the number of connected clients\n\n" +
+
                     "updateclients\n" +
-                    "- forces all clients to update their data from the server\n\n"+
+                    "- forces all clients to update their data from the server\n\n" +
+
                     "reset\n" +
                     "- Resets all game data to nothing";
             }
@@ -81,9 +93,7 @@ public class ConsoleCommands {
 
                 for (int i = 3; i<=args.Length; i++)
                     taskDescription += " " + args[i];
-
                 Server._gameData.SetTaskDesc(taskName, taskDescription);
-
                 return "Description set";
             }
             case "tasks": {
@@ -99,9 +109,36 @@ public class ConsoleCommands {
                 Server.SendGameUpdateToAll();
                 return $"Updating data for all clients";
             }
+            case "renameadminowned": {
+                throw new Exception("command not yet created.");
+                if (args.Length != 2) throw ilegalArgumentCount;
+                //TODO
+                return "Admin owned tasks renamed";
+            }
+            case "scoreshidden": {
+                throw new Exception("command not yet created.");
+                if (args.Length != 2) throw ilegalArgumentCount;
+                //TODO
+                return "Setting changed";
+            }
+            case "settakeovermode": {
+                if (args.Length != 3) throw ilegalArgumentCount;
+                Server._gameData.SetTakoverMode(args[1], args[2]);
+                return "Mode change success";
+            }
+            case "settakeovermodeall": {
+                if (args.Length != 2) throw ilegalArgumentCount;
+                Server._gameData.SetTakoverModeAll(args[1]);
+                return "Mode change success";
+            }
+            case "linkmaptask": {
+                if (args.Length != 3) throw ilegalArgumentCount;
+                Server._gameData.LinkTaskToMap(args[1], args[2]);
+                return $"Linked task to map location {args[2]}";
+            }
             case "reset": {
                 if (args.Length != 1) throw ilegalArgumentCount ;
-
+                confirmCommand = new ResetDataCommand();
                 return "Type \"confirm\" to confirm data reset";
             }
             case "confirm": {

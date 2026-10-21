@@ -1,5 +1,4 @@
 ﻿using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
 using shared;
 
 // Railway provides PORT. Use 55555 when running locally.
@@ -88,8 +87,8 @@ app.Run(async context => {
                     throw new InvalidDataException(
                         "Could not deserialize message.");
 
-                Console.WriteLine(
-                    $"Client {client.Id}: {incoming.GetType().Name}");
+                //Console.WriteLine(
+                //    $"Client {client.Id}: {incoming.GetType().Name}");
 
                 ISerializable response =
                     MessageHandler.HandleMessage(client, incoming);

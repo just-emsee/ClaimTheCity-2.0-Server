@@ -124,6 +124,22 @@ public class GameData : ISerializable {
         if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
         tasks[taskName].description = taskDescription;
     }
+
+    internal void LinkTaskToMap(string taskName, string mapLink) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].linkedMap = mapLink;
+    }
+
+    internal void SetTakoverModeAll(string mode) {
+        foreach (GameTask task in tasks.Values) {
+            task.SetTakoverMode(mode);
+        }
+    }
+
+    internal void SetTakoverMode(string taskName, string mode) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].SetTakoverMode(mode);
+    }
 }
 
 public class GameTeam : ISerializable {
@@ -162,6 +178,7 @@ public class GameTask : ISerializable {
     private readonly List<Scoring> scores = new();
     private Scoring bestScore;
     public string description = "";
+    public string linkedMap = "";
     public bool HasTeamScore(GameTeam team) {
         return scores.Exists(s => s.team == team);
     }
@@ -191,6 +208,7 @@ public class GameTask : ISerializable {
             pPacket.Write(scoring);
         }
         pPacket.Write(description);
+        pPacket.Write(linkedMap);
     }
 
     public void Deserialize(Packet pPacket) {
@@ -201,6 +219,7 @@ public class GameTask : ISerializable {
             scoreCount--;
         }
         description = pPacket.ReadString();
+        linkedMap = pPacket.ReadString();
     }
 
     public int R() {
@@ -243,6 +262,25 @@ public class GameTask : ISerializable {
 
         if (bestScore != null && bestScore.team == team) {
             RecalculateBestScore();
+        }
+    }
+
+    internal void SetTakoverMode(string mode) {
+        //TODO
+        switch (mode) {
+            case "high": {
+
+                break;
+            }
+            case "low": {
+
+                break;
+            }
+            case "simple": {
+
+                break;
+            }
+            default: throw new Exception("No valid mode given");
         }
     }
 
