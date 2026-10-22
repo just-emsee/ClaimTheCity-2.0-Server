@@ -5,6 +5,7 @@ using shared;
 var port = Environment.GetEnvironmentVariable("PORT") ?? "55555";
 var _adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "admin";
 var _savePath = Environment.GetEnvironmentVariable("SAVE_PATH") ?? "./save";
+var _wipeSave = Environment.GetEnvironmentVariable("WIPE_SAVE") ?? "false";
 Server.SetAdminPass(_adminPassword);
 Server.savePath = _savePath;
 
@@ -17,7 +18,8 @@ app.UseWebSockets(new WebSocketOptions {
     KeepAliveInterval = TimeSpan.FromSeconds(30)
 });
 
-Server.loadSaveData(Server.savePath);
+if (_wipeSave != "true")
+    Server.loadSaveData(Server.savePath);
 
 // Local console commands are optional. Enable them with
 // ENABLE_CONSOLE_COMMANDS=true when running locally.
