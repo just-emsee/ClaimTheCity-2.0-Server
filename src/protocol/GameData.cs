@@ -5,7 +5,7 @@ using static GameTask;
 
 public class GameData : ISerializable {
     
-    public bool updated;
+    public bool updated = true;
     public bool scoresHiden = true;
     public string adminOwnedTaskName = "none";
     public string defaultTakeoverMode = "high";
