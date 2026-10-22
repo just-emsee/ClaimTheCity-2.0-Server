@@ -1,18 +1,43 @@
 ﻿using shared;
+using System;
+using System.Collections.Generic;
+using static GameTask;
 
 public class GameData : ISerializable {
     
     public bool updated;
     public bool scoresHiden = true;
     public string adminOwnedTaskName = "none";
+    public string defaultTakeoverMode = "high";
+
+    public bool shouldQueueScore = false;
+
+
 
     // <passWord, Team>
     readonly Dictionary<string, GameTeam> teams = new Dictionary<string, GameTeam>();
     readonly Dictionary<string, GameTask> tasks = new Dictionary<string, GameTask>();
 
+    readonly List<Tuple<string, Scoring>> scoreQueue = new List<Tuple<string, GameTask.Scoring>>();
+
     public void addScore(string taskName, string teamPassWord, double score) {
-        if (taskExists(taskName) && teamExists(teamPassWord))
-            tasks[taskName].setScore(score, teams[teamPassWord], teamPassWord);
+        if (!shouldQueueScore) {
+            if (taskExists(taskName) && teamExists(teamPassWord))
+                tasks[taskName].setScore(score, teams[teamPassWord], teamPassWord);
+        } else {
+            scoreQueue.Add(new Tuple<string, Scoring>(taskName, new Scoring(score, teams[teamPassWord], teamPassWord)));
+        }
+        updated = true;
+    }
+
+    public void AcceptScore() {
+        string task = scoreQueue.First().Item1;
+        Scoring scoring = scoreQueue.First().Item2;
+
+        scoreQueue.RemoveAt(0);
+
+        if (taskExists(task) && teamExists(scoring.teamPass))
+            tasks[task].setScore(scoring);
         updated = true;
     }
 
@@ -27,6 +52,7 @@ public class GameData : ISerializable {
     public void CreateTask(string name) {
         if (tasks.ContainsKey(name)) throw new Exception("Name already in use");
         tasks.Add(name, new GameTask());
+        SetTakeoverMode(name, defaultTakeoverMode);
         updated = true;
     }
 
@@ -86,6 +112,14 @@ public class GameData : ISerializable {
         updated = true;
     }
 
+    public void SetDefaultTakeoverMode(string mode) {
+        if (mode != "high" && mode != "low" && mode != "simple") {
+            throw new Exception("No valid mode given");
+        }
+        defaultTakeoverMode = mode;
+        updated = true;
+    }
+
     public void SetScoreHidden(bool val) {
         scoresHiden = val;
         updated = true;
@@ -96,11 +130,19 @@ public class GameData : ISerializable {
         updated = true;
     }
 
+    internal void SetUseScoreQueue(bool val) {
+        shouldQueueScore = val;
+        updated = true;
+    }
+
     public void Serialize(Packet pPacket) {
         pPacket.Write(scoresHiden);
         pPacket.Write(adminOwnedTaskName);
+        pPacket.Write(defaultTakeoverMode);
+        pPacket.Write(shouldQueueScore);
         pPacket.Write(teams.Count);
         pPacket.Write(tasks.Count);
+        pPacket.Write(scoreQueue.Count);
         foreach (KeyValuePair<string, GameTeam> pair in teams) {
             pPacket.Write(pair.Key);
             pPacket.Write(pair.Value);
@@ -109,15 +151,23 @@ public class GameData : ISerializable {
             pPacket.Write(pair.Key);
             pPacket.Write(pair.Value);
         }
+        foreach (Tuple<string, GameTask.Scoring> score in scoreQueue) {
+            pPacket.Write(score.Item1);
+            pPacket.Write(score.Item2);
+        }
     }
 
     public void Deserialize(Packet pPacket) {
         scoresHiden = pPacket.ReadBool();
         adminOwnedTaskName = pPacket.ReadString();
+        defaultTakeoverMode = pPacket.ReadString();
+        shouldQueueScore = pPacket.ReadBool();
         int teamCount = pPacket.ReadInt();
         int taskCount = pPacket.ReadInt();
+        int queueCount = pPacket.ReadInt();
         teams.Clear();
         tasks.Clear();
+        scoreQueue.Clear();
         while (teamCount > 0) {
             teams.Add(pPacket.ReadString(), (GameTeam)pPacket.ReadObject());
             teamCount--;
@@ -125,6 +175,10 @@ public class GameData : ISerializable {
         while (taskCount > 0) {
             tasks.Add(pPacket.ReadString(), (GameTask)pPacket.ReadObject());
             taskCount--;
+        }
+        while (queueCount > 0) {
+            scoreQueue.Add(new Tuple<string, GameTask.Scoring>(pPacket.ReadString(), (GameTask.Scoring)pPacket.ReadObject()));
+           queueCount--;
         }
     }
 
@@ -161,6 +215,11 @@ public class GameData : ISerializable {
     public Dictionary<string, GameTask> GetTasks() {
         return tasks;
     }
+
+    internal string GetScoreLog(string taskName) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        return tasks[taskName].GetScoreLog();
+    } 
 }
 
 public class GameTeam : ISerializable {
@@ -222,6 +281,10 @@ public class GameTask : ISerializable {
 
     public void setScore(double score, GameTeam team, string pass) {
         scores.Add(new Scoring(score, team, pass));
+    }
+
+    public void setScore(Scoring scoring) {
+        scores.Add(scoring);
     }
 
     public void Serialize(Packet pPacket) {
@@ -294,6 +357,16 @@ public class GameTask : ISerializable {
             throw new Exception("No valid mode given");
         }
         takeoverMode = mode;
+    }
+
+    public string GetScoreLog() {
+        string toReturn = "";
+
+        foreach (Scoring score in scores) {
+            toReturn += score.team.name + "-" + score.score + "-" + score.timestamp + "\n";
+        }
+        toReturn.TrimEnd('\n');
+        return toReturn;
     }
 
     public class Scoring : ISerializable {

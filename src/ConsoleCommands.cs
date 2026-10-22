@@ -100,6 +100,10 @@ public class ConsoleCommands {
                 if (args.Length != 1) throw ilegalArgumentCount;
                 return Server._gameData.GetTaskLog();
             }
+            case "scores": {
+                if (args.Length != 2) throw ilegalArgumentCount;
+                return Server._gameData.GetScoreLog(args[1]);
+            }
             case "clients": {
                 if (args.Length != 1) throw ilegalArgumentCount;
                 return $"Client Count: {Server.clients.Count}";
@@ -140,6 +144,28 @@ public class ConsoleCommands {
                 if (args.Length != 2) throw ilegalArgumentCount;
                 Server._gameData.SetTakeoverModeAll(args[1]);
                 return "Mode change success";
+            }
+            case "settakeovermodedefault": {
+                if (args.Length != 2) throw ilegalArgumentCount;
+                Server._gameData.SetDefaultTakeoverMode(args[1]);
+                return "Default change success";
+            }
+            case "usescorequeue": {
+                if (args.Length != 2) throw ilegalArgumentCount;
+                switch (args[1]) {
+                    case "true": {
+                        Server._gameData.SetUseScoreQueue(true);
+                        break;
+                    }
+                    case "false": {
+                        Server._gameData.SetUseScoreQueue(false);
+                        break;
+                    }
+                    default: {
+                        throw new Exception("Please use true or false");
+                    }
+                }
+                return "Setting changed";
             }
             case "linkmaptask": {
                 if (args.Length != 3) throw ilegalArgumentCount;

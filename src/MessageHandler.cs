@@ -15,9 +15,10 @@ public static class MessageHandler {
                 return new DataUpdateMessage(Server._gameData);
             } else if (message is SubmitScoreMessage submitScoreMessage) {
                 return HandleSubmitScoreMessage(client, submitScoreMessage);    
-            }
-
-            else throw new InvalidDataException(
+            } else if (message is AcceptScoreMessage acceptScoreMessage) {
+                Server._gameData.AcceptScore();
+                return new DataUpdateMessage(Server._gameData);
+            } else throw new InvalidDataException(
                 $"Unhandled message type: {message.GetType().FullName}");
         }
     }
