@@ -20,6 +20,8 @@ app.UseWebSockets(new WebSocketOptions {
 
 if (_wipeSave != "true")
     Server.loadSaveData(Server.savePath);
+else
+    Server.CreateNewSaveDate();
 
 // Local console commands are optional. Enable them with
 // ENABLE_CONSOLE_COMMANDS=true when running locally.
@@ -221,6 +223,7 @@ public static class Server {
     public static void loadSaveData(string path) {
         if (!File.Exists(path)) {
             Console.WriteLine("No save file found; starting with empty game data.");
+            CreateNewSaveDate();
             return;
         }
 
@@ -238,6 +241,11 @@ public static class Server {
             Console.WriteLine($"Could not load save data: {ex.Message}");
             throw;
         }
+    }
+
+    public static void CreateNewSaveDate() {
+        _gameData = new();
+        saveGameData(savePath);
     }
 
     public static void saveGameData(string path) {
@@ -260,7 +268,6 @@ public static class Server {
         lock (GameDataLock) {
             if (!_gameData.updated)
                 return;
-
             Console.WriteLine("Saving game data...");
             saveGameData(savePath);
             Console.WriteLine("Save complete.");
