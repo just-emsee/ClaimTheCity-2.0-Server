@@ -46,6 +46,10 @@ public class GameData : ISerializable {
         updated = true;
     }
 
+    public void DenyScore() {
+        scoreQueue.RemoveAt(0);
+    }
+
     public bool taskExists(string name) {
         return tasks.ContainsKey(name);
     }
