@@ -22,40 +22,67 @@ public class ConsoleCommands {
         confirmCommand = null;
         switch (args[0]) {
             case "help": {
-                //TODO update to include all commands.
-                return "List of commands:\n" +
+                return "List of commands:\n\n" +
+
                     "createteam [team_name] [team_password]\n" +
-                    "- creates a new team\n\n" +
+                    "- Creates a new team\n\n" +
 
                     "removeteam [team_password]\n" +
-                    "- removes a team\n\n" +
+                    "- Removes a team using its password\n\n" +
 
                     "setteamcolor [team_password] [R] [G] [B]\n" +
-                    "- sets the color for a given team\n\n" +
+                    "- Sets a team's color using RGB values\n\n" +
 
                     "teams\n" +
-                    "- lists all teams\n\n" +
+                    "- Lists all teams\n\n" +
 
                     "createtask [task_name]\n" +
-                    "- creates a new task\n\n" +
+                    "- Creates a new task\n\n" +
 
                     "removetask [task_name]\n" +
-                    "- creates a new task\n\n" +
+                    "- Removes a task\n\n" +
 
                     "settaskdescription [task_name] [description]\n" +
-                    "- sets the text descripttion for a task\n\n" +
+                    "- Sets a task's description (spaces are allowed)\n\n" +
 
                     "tasks\n" +
-                    "- lists all tasks\n\n" +
+                    "- Lists all tasks\n\n" +
+
+                    "scores [team_name]\n" +
+                    "- Displays the scores for the specified team\n\n" +
 
                     "clients\n" +
-                    "- gives the number of connected clients\n\n" +
+                    "- Displays the number of connected clients\n\n" +
 
                     "updateclients\n" +
-                    "- forces all clients to update their data from the server\n\n" +
+                    "- Forces all clients to update their data from the server\n\n" +
+
+                    "renameadminowned [new_name]\n" +
+                    "- Renames admin-owned tasks\n\n" +
+
+                    "setscoreshidden [true/false]\n" +
+                    "- Enables or disables hiding scores\n\n" +
+
+                    "settakeovermode [team_name] [mode]\n" +
+                    "- Sets the takeover mode for a specific team\n\n" +
+
+                    "settakeovermodeall [mode]\n" +
+                    "- Sets the takeover mode for all teams\n\n" +
+
+                    "settakeovermodedefault [mode]\n" +
+                    "- Sets the default takeover mode for teams\n\n" +
+
+                    "usescorequeue [true/false]\n" +
+                    "- Enables or disables the score queue\n\n" +
+
+                    "linkmaptask [task_name] [map_location]\n" +
+                    "- Links a task to a map location\n\n" +
 
                     "reset\n" +
-                    "- Resets all game data to nothing";
+                    "- Requests a reset of all game data (requires confirmation)\n\n" +
+
+                    "confirm\n" +
+                    "- Confirms a pending command, such as a data reset";
             }
             case "createteam": {
                 if (args.Length != 3) throw ilegalArgumentCount;
@@ -118,7 +145,7 @@ public class ConsoleCommands {
                 Server._gameData.RenameAdminOwnedTasks(args[1]);
                 return "Admin owned tasks renamed";
             }
-            case "scoreshidden": {
+            case "setscoreshidden": {
                 if (args.Length != 2) throw ilegalArgumentCount;
                 switch (args[1]) {
                     case "true": {

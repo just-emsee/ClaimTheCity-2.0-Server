@@ -32,6 +32,7 @@ public class GameData : ISerializable {
     }
 
     public Tuple<string, Scoring> GetFirstInQueue() {
+        if (scoreQueue.Count == 0) return null;
         return scoreQueue.First();
     }
 
@@ -44,10 +45,6 @@ public class GameData : ISerializable {
         if (taskExists(task) && teamExists(scoring.teamPass))
             tasks[task].setScore(scoring);
         updated = true;
-    }
-
-    public void DenyScore() {
-        scoreQueue.RemoveAt(0);
     }
 
     public bool taskExists(string name) {
@@ -228,6 +225,10 @@ public class GameData : ISerializable {
     internal string GetScoreLog(string taskName) {
         if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
         return tasks[taskName].GetScoreLog();
+    }
+
+    internal int QueueCount() {
+        return scoreQueue.Count;
     }
 }
 
