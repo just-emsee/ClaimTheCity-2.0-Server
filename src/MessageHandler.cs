@@ -18,6 +18,9 @@ public static class MessageHandler {
             } else if (message is AcceptScoreMessage acceptScoreMessage) {
                 Server._gameData.AcceptScore();
                 return new DataUpdateMessage(Server._gameData);
+            } else if (message is DenyScoreMessage denyScoreMessage) {
+                Server._gameData.DenyScore();
+                return new DataUpdateMessage(Server._gameData);
             } else throw new InvalidDataException(
                 $"Unhandled message type: {message.GetType().FullName}");
         }

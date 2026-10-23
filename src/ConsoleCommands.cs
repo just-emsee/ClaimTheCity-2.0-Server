@@ -91,7 +91,7 @@ public class ConsoleCommands {
                 string taskName = args[1];
                 string taskDescription = args[2];
 
-                for (int i = 3; i<=args.Length; i++)
+                for (int i = 3; i<args.Length; i++)
                     taskDescription += " " + args[i];
                 Server._gameData.SetTaskDesc(taskName, taskDescription);
                 return "Description set";

@@ -1,10 +1,11 @@
 ﻿using shared;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static GameTask;
 
 public class GameData : ISerializable {
-    
+
     public bool updated = true;
     public bool scoresHiden = true;
     public string adminOwnedTaskName = "none";
@@ -28,6 +29,10 @@ public class GameData : ISerializable {
             scoreQueue.Add(new Tuple<string, Scoring>(taskName, new Scoring(score, teams[teamPassWord], teamPassWord)));
         }
         updated = true;
+    }
+
+    public Tuple<string, Scoring> GetFirstInQueue() {
+        return scoreQueue.First();
     }
 
     public void AcceptScore() {
@@ -178,7 +183,7 @@ public class GameData : ISerializable {
         }
         while (queueCount > 0) {
             scoreQueue.Add(new Tuple<string, GameTask.Scoring>(pPacket.ReadString(), (GameTask.Scoring)pPacket.ReadObject()));
-           queueCount--;
+            queueCount--;
         }
     }
 
@@ -219,7 +224,7 @@ public class GameData : ISerializable {
     internal string GetScoreLog(string taskName) {
         if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
         return tasks[taskName].GetScoreLog();
-    } 
+    }
 }
 
 public class GameTeam : ISerializable {
@@ -353,7 +358,7 @@ public class GameTask : ISerializable {
     }
 
     public void SetTakeoverMode(string mode) {
-        if (mode!="high" && mode != "low" && mode != "simple") {
+        if (mode != "high" && mode != "low" && mode != "simple") {
             throw new Exception("No valid mode given");
         }
         takeoverMode = mode;
