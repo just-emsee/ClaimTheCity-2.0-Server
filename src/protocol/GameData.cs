@@ -144,6 +144,12 @@ public class GameData : ISerializable {
         updated = true;
     }
 
+    internal void ClearScores(string taskName) {
+        if (!tasks.ContainsKey(taskName)) throw new ArgumentException("Task does not exist.");
+        tasks[taskName].ClearScores();
+        updated = true;
+    }
+
     public void Serialize(Packet pPacket) {
         pPacket.Write(scoresHiden);
         pPacket.Write(adminOwnedTaskName);
@@ -380,6 +386,10 @@ public class GameTask : ISerializable {
         }
         toReturn.TrimEnd('\n');
         return toReturn;
+    }
+
+    internal void ClearScores() {
+        scores.Clear();
     }
 
     public class Scoring : ISerializable {

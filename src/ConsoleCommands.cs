@@ -42,6 +42,9 @@ public class ConsoleCommands {
                     "removetask [task_name]\n" +
                     "- Removes a task\n\n" +
 
+                    "clearscores [task_name]\n" +
+                    "clears scores for a task\n\n" +
+
                     "settaskdescription [task_name] [description]\n" +
                     "- Sets a task's description (spaces are allowed)\n\n" +
 
@@ -112,6 +115,11 @@ public class ConsoleCommands {
                 if (args.Length != 2) throw ilegalArgumentCount;
                 Server._gameData.RemoveTask(args[1]);
                 return "Task removed";
+            }
+            case "clearscores": {
+                if (args.Length != 2) throw ilegalArgumentCount;
+                Server._gameData.ClearScores(args[1]);
+                return "Scores Cleared";
             }
             case "settaskdescription": {
                 if (args.Length <= 2) throw ilegalArgumentCount;
